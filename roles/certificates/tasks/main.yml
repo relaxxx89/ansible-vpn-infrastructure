@@ -1,0 +1,28 @@
+---
+- name: Install certificate management packages
+  ansible.builtin.apt:
+    name:
+      - certbot
+      - openssl
+    state: present
+    update_cache: true
+
+- name: Enable automatic renewal timer
+  ansible.builtin.systemd_service:
+    name: certbot.timer
+    enabled: true
+    state: started
+
+- name: Create Certbot deploy hook directory
+  ansible.builtin.file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
+    mode: '0755'
+
+- name: Install 3x-ui certificate deploy hook
+  ansible.builtin.template:
+    src: deploy-x-ui-cert.sh.j2
+    dest: /etc/letsencrypt/renewal-hooks/deploy/30-x-ui-cert.sh
+    owner: root
+    group: root
+    mode: '0700'

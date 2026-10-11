@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+SRC=/etc/letsencrypt/live/{{ x_ui_domain }}
+DST=/root/cert/{{ x_ui_domain }}
+
+mkdir -p "$DST"
+chmod 700 "$DST"
+
+if cmp -s "$SRC/fullchain.pem" "$DST/fullchain.pem" &&
+   cmp -s "$SRC/privkey.pem" "$DST/privkey.pem"; then
+    exit 0
+fi
+
+install -m 0644 "$SRC/fullchain.pem" "$DST/fullchain.pem"
+install -m 0600 "$SRC/privkey.pem" "$DST/privkey.pem"
+
+systemctl restart x-ui

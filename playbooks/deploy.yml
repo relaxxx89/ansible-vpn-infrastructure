@@ -1,0 +1,8 @@
+---
+- name: Deploy VPN infrastructure
+  hosts: vpn
+  become: true
+  roles:
+    - firewall
+    - certificates
+    - x_ui

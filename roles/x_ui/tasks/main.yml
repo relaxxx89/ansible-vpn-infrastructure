@@ -1,0 +1,83 @@
+---
+- name: Check existing 3x-ui installation
+  ansible.builtin.stat:
+    path: /usr/local/x-ui/x-ui
+  register: x_ui_binary
+
+- name: Check existing 3x-ui database
+  ansible.builtin.stat:
+    path: /etc/x-ui/x-ui.db
+  register: x_ui_database
+
+- name: Create 3x-ui directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /usr/local/x-ui, mode: '0755' }
+    - { path: /etc/x-ui, mode: '0700' }
+
+- name: Restore 3x-ui binaries
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../private/x_ui/usr/local/x-ui/"
+    dest: /usr/local/x-ui/
+    owner: root
+    group: root
+    mode: preserve
+  when: not x_ui_binary.stat.exists
+
+- name: Restore 3x-ui database and configuration
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../private/x_ui/etc/x-ui/"
+    dest: /etc/x-ui/
+    owner: root
+    group: root
+    mode: preserve
+  when: not x_ui_database.stat.exists
+  no_log: true
+
+- name: Install 3x-ui systemd unit
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../private/x_ui/etc/systemd/system/x-ui.service"
+    dest: /etc/systemd/system/x-ui.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Reload systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Create TLS certificate directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  loop:
+    - /root/cert
+    - /root/cert/{{ x_ui_domain }}
+
+- name: Restore TLS certificates
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../private/certs/{{ x_ui_domain }}/{{ item.name }}"
+    dest: "/root/cert/{{ x_ui_domain }}/{{ item.name }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+    force: false
+  loop:
+    - { name: fullchain.pem, mode: '0644' }
+    - { name: privkey.pem, mode: '0600' }
+  no_log: true
+
+- name: Enable and start 3x-ui
+  ansible.builtin.systemd_service:
+    name: x-ui
+    enabled: true
+    state: started
+  when: x_ui_start_service | default(false) | bool

@@ -1,0 +1,3 @@
+---
+x_ui_domain: vpn.example.com
+x_ui_start_service: true

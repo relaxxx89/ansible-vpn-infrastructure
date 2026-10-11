@@ -1,0 +1,18 @@
+/private/
+/.venv/
+*.retry
+*.log
+
+# Local inventory and variables
+/inventory/hosts.ini
+/inventory/group_vars/vpn.yml
+
+# Credentials, databases and backups
+*.db
+*.sqlite*
+*.pem
+*.key
+*.p12
+*.tar.gz
+.env
+.env.*
